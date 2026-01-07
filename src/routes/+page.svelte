@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { callRemoteFunc } from './app.remote';
+
+	let text = $state(await callRemoteFunc('Initial Text'));
 </script>
 
 <h1>Starter Kit</h1>
@@ -17,6 +20,20 @@
 	<li><code>svelte async</code> - async component support</li>
 	<li><code>svelte remote functions</code> - server functions callable from client</li>
 </ul>
+<pre>Call Remote Function:
+
+	let text = callRemoteFunc('Initial Text');
+</pre>
+
+{#if text}
+	{text}
+{/if}
+
+<button
+	onclick={async () => {
+		text = await callRemoteFunc('Refreshed Text');
+	}}>Refresh Call</button
+>
 
 <h2>Environment Variables</h2>
 
