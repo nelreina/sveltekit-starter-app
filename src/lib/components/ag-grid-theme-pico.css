@@ -1,0 +1,39 @@
+/*
+ * AG Grid Theme - Pico CSS Preset
+ *
+ * Customize these CSS variables to match your design system.
+ * The component reads --grid-* variables and passes them to AG Grid.
+ *
+ * To create a theme for another project:
+ * 1. Copy this file
+ * 2. Update the --grid-* variable values for light and dark modes
+ * 3. Import your custom file in the AgGrid component
+ */
+
+/* ===========================================
+ * LIGHT THEME
+ * =========================================== */
+:root {
+	--grid-bg: #ffffff;
+	--grid-fg: #373c44;
+	--grid-border: #d4d9e1;
+	--grid-header-bg: #f8f9fa;
+	--grid-header-fg: #373c44;
+	--grid-row-hover: #f1f3f5;
+	--grid-row-selected: rgba(1, 114, 173, 0.12);
+	--grid-accent: #0172ad;
+}
+
+/* ===========================================
+ * DARK THEME
+ * =========================================== */
+.ag-grid-dark {
+	--grid-bg: #13161e;
+	--grid-fg: #c2c7d0;
+	--grid-border: #2d333b;
+	--grid-header-bg: #1a1e28;
+	--grid-header-fg: #c2c7d0;
+	--grid-row-hover: #1e232d;
+	--grid-row-selected: rgba(1, 170, 255, 0.15);
+	--grid-accent: #01aaff;
+}

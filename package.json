@@ -42,6 +42,7 @@
     "vite-plugin-devtools-json": "^1.0.0"
   },
   "dependencies": {
+    "ag-grid-community": "^35.0.0",
     "better-auth": "^1.4.10",
     "drizzle-orm": "^0.45.1",
     "pg": "^8.16.3",

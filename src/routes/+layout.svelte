@@ -13,6 +13,7 @@
 	<nav>
 		<a href={resolve('/')}>Home</a>
 		<a href={resolve('/app')}>Start</a>
+		<a href={resolve('/sales')}>AG Grid</a>
 	</nav>
 	<main>
 		{@render children()}
