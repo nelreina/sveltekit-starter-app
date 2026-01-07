@@ -1,0 +1,16 @@
+REDIS_URL='redis://localhost:6379'
+
+# Database
+DATABASE_URL="postgresql://<user>:<password>@localhost:5432/<database_name>"
+
+# Better Auth
+BETTER_AUTH_SECRET=
+BETTER_AUTH_URL="http://localhost:5173"
+
+# Keycloak
+KEYCLOAK_CLIENT_ID=
+KEYCLOAK_CLIENT_SECRET=
+KEYCLOAK_ISSUER="https://<keycloak-domain>/realms/<realm-name>"
+
+# Optional: Set to "true" to also log out of Keycloak (Single Logout)
+KEYCLOAK_LOGOUT_ENABLED="false"
