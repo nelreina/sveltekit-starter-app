@@ -19,5 +19,16 @@
 - `KEYCLOAK_CLIENT_ID` - OAuth client ID
 - `KEYCLOAK_CLIENT_SECRET` - OAuth client secret
 
+## Docker
+- Multi-stage Dockerfile (optimized for production)
+- `compose.yaml` reads env vars from `.env` or shell
+
+```bash
+# Build and run
+docker compose up -d
+```
+
 ## Completed
 - [x] Created starter page with project info and env vars
+- [x] Added Dockerfile (multi-stage, health check, non-root user)
+- [x] Added compose.yaml
