@@ -68,6 +68,8 @@ bun --bun run dev
 | `KEYCLOAK_CLIENT_ID` | OAuth client ID | `my-app` |
 | `KEYCLOAK_CLIENT_SECRET` | OAuth client secret | From Keycloak console |
 | `KEYCLOAK_LOGOUT_ENABLED` | Enable single logout (optional) | `true` |
+| `BETTER_AUTH_SESSION_EXPIRES_IN` | Session expiration time in seconds | `604800` (7 days) |
+| `BETTER_AUTH_SESSION_UPDATE_AGE` | Session update interval in seconds | `86400` (1 day) |
 
 ## Development Commands
 

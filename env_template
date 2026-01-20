@@ -6,6 +6,8 @@ DATABASE_URL="postgresql://<user>:<password>@localhost:5432/<database_name>"
 # Better Auth
 BETTER_AUTH_SECRET=
 BETTER_AUTH_URL="http://localhost:5173"
+BETTER_AUTH_SESSION_EXPIRES_IN=28800
+BETTER_AUTH_SESSION_UPDATE_AGE=3600
 
 # Keycloak
 KEYCLOAK_CLIENT_ID=

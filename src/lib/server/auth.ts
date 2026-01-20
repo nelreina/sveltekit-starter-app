@@ -8,7 +8,9 @@ import {
 	DATABASE_URL,
 	KEYCLOAK_CLIENT_ID,
 	KEYCLOAK_CLIENT_SECRET,
-	KEYCLOAK_ISSUER
+	KEYCLOAK_ISSUER,
+	BETTER_AUTH_SESSION_UPDATE_AGE,
+	BETTER_AUTH_SESSION_EXPIRES_IN
 } from '$env/static/private';
 
 const pool = new pg.Pool({
@@ -17,6 +19,13 @@ const pool = new pg.Pool({
 
 export const auth = betterAuth({
 	database: pool,
+	session: {
+  expiresIn: BETTER_AUTH_SESSION_EXPIRES_IN , // 8 hours
+  updateAge: BETTER_AUTH_SESSION_UPDATE_AGE, // every hour
+  cookieCache: {
+    enabled: false // Every request checks DB
+  }
+}
 	plugins: [
 		sveltekitCookies(getRequestEvent),
 		genericOAuth({
