@@ -1,8 +1,8 @@
 import { RedisClient } from 'bun';
-import { REDIS_URL } from '$env/static/private';
 import { building } from '$app/environment';
+import { env } from '$env/dynamic/private';
 
-const client = new RedisClient(REDIS_URL);
+const client = new RedisClient(env.REDIS_URL);
 
 if (!building) await client.connect();
 

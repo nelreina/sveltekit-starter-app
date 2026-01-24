@@ -1,0 +1,8 @@
+build
+# .env
+.claude
+node_modules
+.vscode
+.DS_Store
+.svelte-kit
+
