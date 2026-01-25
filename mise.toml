@@ -2,11 +2,11 @@
 bun = "latest"
 
 [env]
-BETTER_AUTH_URL = "http://localhost:3000"
 BETTER_AUTH_SESSION_EXPIRES_IN = 28800
 BETTER_AUTH_SESSION_UPDATE_AGE = 3600
 KEYCLOAK_LOGOUT_ENABLED = "true"
-
+ORIGIN = "http://localhost:3000"
+BETTER_AUTH_URL = "{{ env.ORIGIN }}"
 # Move to secret management solution in production
 KEYCLOAK_CLIENT_ID = "sveltekit-app-better-dev2"
 KEYCLOAK_CLIENT_SECRET = ""

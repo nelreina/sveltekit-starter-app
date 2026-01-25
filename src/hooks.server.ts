@@ -1,4 +1,4 @@
-import { auth } from '$lib/server/auth';
+import { auth, getSession } from '$lib/server/auth';
 import { svelteKitHandler } from 'better-auth/svelte-kit';
 import { building } from '$app/environment';
 import { redirect } from '@sveltejs/kit';
@@ -6,9 +6,7 @@ import type { Handle } from '@sveltejs/kit';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	// Get session and populate locals
-	const session = await auth.api.getSession({
-		headers: event.request.headers
-	});
+	const session = await getSession(event);
 
 	if (session) {
 		event.locals.session = session.session;

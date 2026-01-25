@@ -2,6 +2,13 @@
 FROM oven/bun:1 AS base
 WORKDIR /app
 
+# Set timezone
+ENV TZ=America/Curacao
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata \
+    && ln -snf /usr/share/zoneinfo/$TZ /etc/localtime \
+    && echo $TZ > /etc/timezone \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
+
 # Install dependencies (cached layer)
 FROM base AS install
 COPY package.json bun.lock ./

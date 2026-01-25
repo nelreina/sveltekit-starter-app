@@ -19,6 +19,7 @@
 
 <small>Logged in as: {data.user?.email}</small><br/>
 <small>Keycloak logout url: {data.keycloakLogoutUrl}</small>
+<pre>{JSON.stringify(data, null, 2)}</pre>
 {@render children()}
 <style>
 	nav {
