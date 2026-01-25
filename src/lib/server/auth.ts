@@ -7,6 +7,7 @@ import pg from 'pg';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
 import { account } from '$lib/server/db/schema'; // Your account table schema
+import { extractKeycloakRoles } from '$lib/server/utils';
 import { eq, and } from 'drizzle-orm';
 
 const pool = new pg.Pool({
@@ -37,24 +38,27 @@ export const auth = betterAuth({
 	]
 });
 export const getSession = async (event: RequestEvent) => {
+	const kcloak = {};
 	const session = await auth.api.getSession({
 		headers: event.request.headers
 	});
-	const kcloak = {};
-	const keycloakAccount = await db
-		.select()
-		.from(account)
-		.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
-		.limit(1);
-	// console.log(keycloakAccount);
-	if (keycloakAccount) {
-		kcloak.keycloakJWTToken = keycloakAccount[0]?.accessToken;
-		kcloak.keycloakRefreshToken = keycloakAccount[0]?.refreshToken;
-	} else {
-		console.log('No account found!');
+	if (session) {
+		const keycloakAccount = await db
+			.select()
+			.from(account)
+			.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
+			.limit(1);
+		// console.log(keycloakAccount);
+		if (keycloakAccount) {
+			const jwtToken = keycloakAccount[0]?.accessToken;
+			kcloak.jwtToken = jwtToken;
+			kcloak.refreshToken = keycloakAccount[0]?.refreshToken;
+			session.user.roles = extractKeycloakRoles(jwtToken);
+		} else {
+			console.log('No account found!');
+		}
+		return { ...session, keycloak: kcloak };
 	}
-	console.log({ keycloak: kcloak });
-	return { ...session, keycloak: kcloak };
 };
 export const isAuthorized = async (event: RequestEvent) => {
 	return !!(await getSession(event));

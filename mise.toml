@@ -27,7 +27,7 @@ preview = "bun --bun run preview ./build"
 test = "bun --bun run test"
 build = "bun --bun run build"
 install = "bun install"
-up = "docker compose up --build"
+up = "docker compose up --build -d"
 
 
 [settings]

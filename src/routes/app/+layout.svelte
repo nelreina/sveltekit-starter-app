@@ -17,10 +17,9 @@
 	<button onclick={handleSignOut}>Sign Out</button>
 </nav>
 
-<small>Logged in as: {data.user?.email}</small><br/>
-<small>Keycloak logout url: {data.keycloakLogoutUrl}</small>
-<pre>{JSON.stringify(data, null, 2)}</pre>
+<small>Logged in as: {data.user?.email}</small><br />
 {@render children()}
+
 <style>
 	nav {
 		display: flex;
