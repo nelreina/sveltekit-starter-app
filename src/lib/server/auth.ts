@@ -12,49 +12,41 @@ import { eq, and } from 'drizzle-orm';
 
 const sqlite = new Database(env.DATABASE_URL || './data/app.db');
 
-// Parse enabled providers from env
-const enabledProviders = (env.AUTH_PROVIDERS || '')
-	.split(',')
-	.map((p) => p.trim().toLowerCase())
-	.filter(Boolean);
-
-// Build social providers config
-const socialProviders: Record<string, object> = {};
-
-if (enabledProviders.includes('github')) {
-	socialProviders.github = {
-		clientId: env.GITHUB_CLIENT_ID,
-		clientSecret: env.GITHUB_CLIENT_SECRET
-	};
+/**
+ * Create a better-auth instance configured for a specific Keycloak realm.
+ * Called dynamically after realm lookup resolves the realm + secret.
+ */
+export function createAuthForRealm(realmId: string, clientSecret: string, issuer: string) {
+	return betterAuth({
+		database: sqlite,
+		session: {
+			expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
+			updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
+			cookieCache: {
+				enabled: false
+			}
+		},
+		plugins: [
+			sveltekitCookies(getRequestEvent),
+			genericOAuth({
+				config: [
+					keycloak({
+						clientId: env.KEYCLOAK_CLIENT_ID,
+						clientSecret,
+						issuer,
+						scopes: ['openid', 'profile', 'roles']
+					})
+				]
+			})
+		]
+	});
 }
 
-if (enabledProviders.includes('google')) {
-	socialProviders.google = {
-		clientId: env.GOOGLE_CLIENT_ID,
-		clientSecret: env.GOOGLE_CLIENT_SECRET
-	};
-}
-
-// Build plugins list
-const plugins: ReturnType<typeof sveltekitCookies | typeof genericOAuth>[] = [
-	sveltekitCookies(getRequestEvent)
-];
-
-if (enabledProviders.includes('keycloak')) {
-	plugins.push(
-		genericOAuth({
-			config: [
-				keycloak({
-					clientId: env.KEYCLOAK_CLIENT_ID,
-					clientSecret: env.KEYCLOAK_CLIENT_SECRET,
-					issuer: env.KEYCLOAK_ISSUER,
-					scopes: ['openid', 'profile', 'roles']
-				})
-			]
-		})
-	);
-}
-
+/**
+ * Default auth instance — used for session validation (reads from DB, realm-agnostic).
+ * The Keycloak plugin here uses placeholder values since it's only used for session ops,
+ * not for initiating OAuth flows.
+ */
 export const auth = betterAuth({
 	database: sqlite,
 	session: {
@@ -64,11 +56,20 @@ export const auth = betterAuth({
 			enabled: false
 		}
 	},
-	socialProviders,
-	plugins
+	plugins: [
+		sveltekitCookies(getRequestEvent),
+		genericOAuth({
+			config: [
+				keycloak({
+					clientId: env.KEYCLOAK_CLIENT_ID,
+					clientSecret: 'placeholder',
+					issuer: `${env.KEYCLOAK_BASE_URL}/realms/placeholder`,
+					scopes: ['openid', 'profile', 'roles']
+				})
+			]
+		})
+	]
 });
-
-export const getEnabledProviders = () => enabledProviders;
 
 export const getSession = async (event: RequestEvent) => {
 	const kcloak = {};
@@ -76,20 +77,16 @@ export const getSession = async (event: RequestEvent) => {
 		headers: event.request.headers
 	});
 	if (session) {
-		if (enabledProviders.includes('keycloak')) {
-			const keycloakAccount = await db
-				.select()
-				.from(account)
-				.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
-				.limit(1);
-			if (keycloakAccount) {
-				const jwtToken = keycloakAccount[0]?.accessToken;
-				kcloak.jwtToken = jwtToken;
-				kcloak.refreshToken = keycloakAccount[0]?.refreshToken;
-				session.user.roles = extractKeycloakRoles(jwtToken);
-			} else {
-				console.log('No account found!');
-			}
+		const keycloakAccount = await db
+			.select()
+			.from(account)
+			.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
+			.limit(1);
+		if (keycloakAccount?.length) {
+			const jwtToken = keycloakAccount[0]?.accessToken;
+			kcloak.jwtToken = jwtToken;
+			kcloak.refreshToken = keycloakAccount[0]?.refreshToken;
+			session.user.roles = extractKeycloakRoles(jwtToken);
 		}
 		return { ...session, keycloak: kcloak };
 	}

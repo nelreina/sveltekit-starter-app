@@ -8,8 +8,12 @@ declare global {
 		interface Locals {
 			session: Session | null;
 			user: User | null;
+			keycloak: Record<string, unknown>;
+			realm: string | null;
 		}
-		// interface PageData {}
+		interface PageData {
+			realm?: string | null;
+		}
 		// interface PageState {}
 		// interface Platform {}
 	}
