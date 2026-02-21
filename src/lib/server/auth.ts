@@ -3,19 +3,17 @@ import { genericOAuth, keycloak } from 'better-auth/plugins';
 import { sveltekitCookies } from 'better-auth/svelte-kit';
 import { getRequestEvent } from '$app/server';
 import type { RequestEvent } from '@sveltejs/kit';
-import pg from 'pg';
+import { Database } from 'bun:sqlite';
 import { env } from '$env/dynamic/private';
 import { db } from '$lib/server/db';
-import { account } from '$lib/server/db/schema'; // Your account table schema
+import { account } from '$lib/server/db/schema';
 import { extractKeycloakRoles } from '$lib/server/utils';
 import { eq, and } from 'drizzle-orm';
 
-const pool = new pg.Pool({
-	connectionString: env.DATABASE_URL
-});
+const sqlite = new Database(env.DATABASE_URL || './data/app.db');
 
 export const auth = betterAuth({
-	database: pool,
+	database: sqlite,
 	session: {
 		expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN, // 8 hours
 		updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE, // every hour
@@ -48,7 +46,6 @@ export const getSession = async (event: RequestEvent) => {
 			.from(account)
 			.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
 			.limit(1);
-		// console.log(keycloakAccount);
 		if (keycloakAccount) {
 			const jwtToken = keycloakAccount[0]?.accessToken;
 			kcloak.jwtToken = jwtToken;
