@@ -12,17 +12,36 @@ import { eq, and } from 'drizzle-orm';
 
 const sqlite = new Database(env.DATABASE_URL || './data/app.db');
 
-export const auth = betterAuth({
-	database: sqlite,
-	session: {
-		expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN, // 8 hours
-		updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE, // every hour
-		cookieCache: {
-			enabled: false // Every request checks DB
-		}
-	},
-	plugins: [
-		sveltekitCookies(getRequestEvent),
+// Parse enabled providers from env
+const enabledProviders = (env.AUTH_PROVIDERS || '')
+	.split(',')
+	.map((p) => p.trim().toLowerCase())
+	.filter(Boolean);
+
+// Build social providers config
+const socialProviders: Record<string, object> = {};
+
+if (enabledProviders.includes('github')) {
+	socialProviders.github = {
+		clientId: env.GITHUB_CLIENT_ID,
+		clientSecret: env.GITHUB_CLIENT_SECRET
+	};
+}
+
+if (enabledProviders.includes('google')) {
+	socialProviders.google = {
+		clientId: env.GOOGLE_CLIENT_ID,
+		clientSecret: env.GOOGLE_CLIENT_SECRET
+	};
+}
+
+// Build plugins list
+const plugins: ReturnType<typeof sveltekitCookies | typeof genericOAuth>[] = [
+	sveltekitCookies(getRequestEvent)
+];
+
+if (enabledProviders.includes('keycloak')) {
+	plugins.push(
 		genericOAuth({
 			config: [
 				keycloak({
@@ -33,30 +52,49 @@ export const auth = betterAuth({
 				})
 			]
 		})
-	]
+	);
+}
+
+export const auth = betterAuth({
+	database: sqlite,
+	session: {
+		expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
+		updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
+		cookieCache: {
+			enabled: false
+		}
+	},
+	socialProviders,
+	plugins
 });
+
+export const getEnabledProviders = () => enabledProviders;
+
 export const getSession = async (event: RequestEvent) => {
 	const kcloak = {};
 	const session = await auth.api.getSession({
 		headers: event.request.headers
 	});
 	if (session) {
-		const keycloakAccount = await db
-			.select()
-			.from(account)
-			.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
-			.limit(1);
-		if (keycloakAccount) {
-			const jwtToken = keycloakAccount[0]?.accessToken;
-			kcloak.jwtToken = jwtToken;
-			kcloak.refreshToken = keycloakAccount[0]?.refreshToken;
-			session.user.roles = extractKeycloakRoles(jwtToken);
-		} else {
-			console.log('No account found!');
+		if (enabledProviders.includes('keycloak')) {
+			const keycloakAccount = await db
+				.select()
+				.from(account)
+				.where(and(eq(account.userId, session.user.id), eq(account.providerId, 'keycloak')))
+				.limit(1);
+			if (keycloakAccount) {
+				const jwtToken = keycloakAccount[0]?.accessToken;
+				kcloak.jwtToken = jwtToken;
+				kcloak.refreshToken = keycloakAccount[0]?.refreshToken;
+				session.user.roles = extractKeycloakRoles(jwtToken);
+			} else {
+				console.log('No account found!');
+			}
 		}
 		return { ...session, keycloak: kcloak };
 	}
 };
+
 export const isAuthorized = async (event: RequestEvent) => {
 	return !!(await getSession(event));
 };
