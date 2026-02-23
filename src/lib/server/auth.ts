@@ -5,12 +5,13 @@ import { getRequestEvent } from '$app/server';
 import type { RequestEvent } from '@sveltejs/kit';
 import { Database } from 'bun:sqlite';
 import { env } from '$env/dynamic/private';
+import { building } from '$app/environment';
 import { db } from '$lib/server/db';
 import { account } from '$lib/server/db/schema';
 import { extractKeycloakRoles } from '$lib/server/utils';
 import { eq, and } from 'drizzle-orm';
 
-const sqlite = new Database(env.DATABASE_URL || './data/app.db');
+const sqlite = building ? null : new Database(env.DATABASE_URL || './data/app.db');
 
 // Parse enabled providers from env
 const enabledProviders = (env.AUTH_PROVIDERS || '')
@@ -55,17 +56,26 @@ if (enabledProviders.includes('keycloak')) {
 	);
 }
 
-export const auth = betterAuth({
-	database: sqlite,
-	session: {
-		expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
-		updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
-		cookieCache: {
-			enabled: false
+let _auth: ReturnType<typeof betterAuth> | null = null;
+
+export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
+	get(_target, prop) {
+		if (!_auth) {
+			_auth = betterAuth({
+				database: sqlite!,
+				session: {
+					expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
+					updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
+					cookieCache: {
+						enabled: false
+					}
+				},
+				socialProviders,
+				plugins
+			});
 		}
-	},
-	socialProviders,
-	plugins
+		return (_auth as any)[prop];
+	}
 });
 
 export const getEnabledProviders = () => enabledProviders;
