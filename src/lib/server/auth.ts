@@ -5,12 +5,13 @@ import { getRequestEvent } from '$app/server';
 import type { RequestEvent } from '@sveltejs/kit';
 import { Database } from 'bun:sqlite';
 import { env } from '$env/dynamic/private';
+import { building } from '$app/environment';
 import { db } from '$lib/server/db';
 import { account } from '$lib/server/db/schema';
 import { extractKeycloakRoles } from '$lib/server/utils';
 import { eq, and } from 'drizzle-orm';
 
-const sqlite = new Database(env.DATABASE_URL || './data/app.db');
+const sqlite = building ? null : new Database(env.DATABASE_URL || './data/app.db');
 
 /**
  * Create a better-auth instance configured for a specific Keycloak realm.
@@ -46,29 +47,39 @@ export function createAuthForRealm(realmId: string, clientSecret: string, issuer
  * Default auth instance — used for session validation (reads from DB, realm-agnostic).
  * The Keycloak plugin here uses placeholder values since it's only used for session ops,
  * not for initiating OAuth flows.
+ * Lazily initialized to avoid URL validation errors during build.
  */
-export const auth = betterAuth({
-	database: sqlite,
-	session: {
-		expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
-		updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
-		cookieCache: {
-			enabled: false
+let _auth: ReturnType<typeof betterAuth> | null = null;
+
+export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
+	get(_target, prop) {
+		if (!_auth) {
+			_auth = betterAuth({
+				database: sqlite!,
+				session: {
+					expiresIn: env.BETTER_AUTH_SESSION_EXPIRES_IN,
+					updateAge: env.BETTER_AUTH_SESSION_UPDATE_AGE,
+					cookieCache: {
+						enabled: false
+					}
+				},
+				plugins: [
+					sveltekitCookies(getRequestEvent),
+					genericOAuth({
+						config: [
+							keycloak({
+								clientId: env.KEYCLOAK_CLIENT_ID,
+								clientSecret: 'placeholder',
+								issuer: `${env.KEYCLOAK_BASE_URL}/realms/placeholder`,
+								scopes: ['openid', 'profile', 'roles']
+							})
+						]
+					})
+				]
+			});
 		}
-	},
-	plugins: [
-		sveltekitCookies(getRequestEvent),
-		genericOAuth({
-			config: [
-				keycloak({
-					clientId: env.KEYCLOAK_CLIENT_ID,
-					clientSecret: 'placeholder',
-					issuer: `${env.KEYCLOAK_BASE_URL}/realms/placeholder`,
-					scopes: ['openid', 'profile', 'roles']
-				})
-			]
-		})
-	]
+		return (_auth as any)[prop];
+	}
 });
 
 export const getSession = async (event: RequestEvent) => {
