@@ -70,7 +70,7 @@ export const auth = new Proxy({} as ReturnType<typeof betterAuth>, {
 							keycloak({
 								clientId: env.KEYCLOAK_CLIENT_ID,
 								clientSecret: 'placeholder',
-								issuer: `${env.KEYCLOAK_BASE_URL}/realms/placeholder`,
+								issuer: `${env.KEYCLOAK_URL}/realms/placeholder`,
 								scopes: ['openid', 'profile', 'roles']
 							})
 						]
