@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { callRemoteFunc } from './app.remote';
 
-	let text = $state(await callRemoteFunc('Initial Text'));
+	let text = $state('(click Refresh Call to fetch from server)');
 </script>
 
 <h1>Starter Kit</h1>
