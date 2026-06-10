@@ -9,7 +9,7 @@
 	<link rel="icon" href={favicon} />
 </svelte:head>
 
-<div data-sveltekit-preload-data="off">
+<div data-sveltekit-preload-data="false">
 	<nav>
 		<a href={resolve('/')}>Home</a>
 		<a href={resolve('/app')}>Start</a>
